@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>PASAPALABRA - Uso Responsable de Redes</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background: url('fondo.jpeg') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .contenedor {
+      background-color: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 0 15px rgba(255, 0, 98, 0.7);
+      position: relative;
+    }
+
+    .titulo, .subtitulo {
+      font-weight: bold;
+      animation: brilloDorado 2s infinite alternate;
+    }
+
+    .boton {
+      margin-top: 15px;
+      margin-bottom: 5px;
+      padding: 12px 25px;
+      font-size: 16px;
+      background-color: rgb(255, 255, 255);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      color: rgb(14, 140, 243);
+      font-weight: bold;
+      animation: brilloDorado 2s infinite alternate;
+      box-shadow: 0 0 10px #3d17e6, 0 0 20px #ffffff;
+      transition: transform 0.2s;
+    }
+
+    .boton:hover {
+      transform: scale(1.05);
+    }
+
+    @keyframes brilloDorado {
+      from {
+        color: #0b0feb;
+        text-shadow: 0 0 10px #fff, 0 0 20px #fff;
+      }
+      to {
+        color: #f03110;
+        text-shadow: 0 0 10px #36c6df, 0 0 20px #518385;
+      }
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      padding-top: 100px;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-contenido {
+      background-color: white;
+      margin: auto;
+      padding: 20px;
+      border: 2px solid #ff0000;
+      width: 60%;
+      max-width: 500px;
+      border-radius: 10px;
+      position: relative;
+      text-align: center;
+      box-shadow: 0 0 20px rgb(0, 110, 255);
+    }
+
+    .cerrar {
+      color: #aaa;
+      position: absolute;
+      right: 15px;
+      top: 10px;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .cerrar:hover {
+      color: red;
+    }
+
+    .circle {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background-color: #ccc;
+      text-align: center;
+      line-height: 30px;
+      font-weight: bold;
+      color: #000;
+    }
+
+    .pregunta-actual {
+      background-color: #ffff00 !important;
+    }
+
+    .bien-respondida {
+      background-color: #00cc66 !important;
+    }
+
+    .mal-respondida {
+      background-color: #ff4444 !important;
+    }
+
+    .pantalla {
+      display: none;
+    }
+
+    .pantalla.activo {
+      display: block;
+    }
+
+    .container {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      margin: 0 auto 20px;
+    }
+
+    /* ✅ Mejora visibilidad en pantalla final */
+    #pantalla-final {
+      color: #ffffff;
+      text-shadow: 1px 1px 3px #000000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Pantalla Inicial -->
+  <div id="pantalla-inicial" class="pantalla activo contenedor">
+    <h1 class="titulo">PASAPALABRA</h1>
+    <h2 class="subtitulo">Uso Responsable de Redes</h2>
+    <button class="boton" id="boton-jugar">COMENZAR JUEGO</button>
+    <button class="boton" id="boton-instrucciones">INSTRUCCIONES</button>
+  </div>
+
+  <!-- Modal de Instrucciones -->
+  <div class="modal" id="modalInstrucciones">
+    <div class="modal-contenido">
+      <span class="cerrar" id="cerrarModal">&times;</span>
+      <h3>Instrucciones del Juego</h3>
+      <p>Responde preguntas relacionadas con el uso responsable de redes sociales. Cada palabra inicia con una letra distinta del abecedario. ¡Buena suerte!</p>
+    </div>
+  </div>
+
+  <!-- Pantalla del Juego -->
+  <div id="pantalla-juego" class="pantalla contenedor">
+    <h2>Tiempo: <span id="tiempo">60</span> segundos</h2>
+    <div class="container"></div>
+    <h3>Letra: <span id="letra-pregunta">A</span></h3>
+    <p id="pregunta">Aquí va la pregunta...</p>
+    <input type="text" id="respuesta" placeholder="Escribe tu respuesta">
+    <br><br>
+    <button class="boton" id="pasar">Pasar</button>
+    <button class="boton" id="boton-regresar">Regresar</button>
+  </div>
+
+  <!-- Pantalla Final -->
+  <div id="pantalla-final" class="pantalla contenedor">
+    <h2>Juego terminado</h2>
+    <p>Respuestas correctas: <span id="acertadas"></span></p>
+    <p>Resultado: <span id="score"></span></p>
+    <button class="boton" id="recomenzar">Reiniciar</button>
+  </div>
+
+  <!-- JavaScript del Juego -->
+  <script>
+    const TOTAL_PREGUNTAS = 10;
+    const TIEMPO_DEL_JUEGO = 60;
+    const bd_juego = [
+      { id: 'A', pregunta: "Qué debes cuidar para no dar tu dirección o número en redes sociales", respuesta: "privacidad" },
+      { id: 'B', pregunta: "Cómo se llama cuando molestan a alguien por internet", respuesta: "ciberacoso" },
+      { id: 'C', pregunta: "Qué puedes usar para decidir quién ve tus publicaciones", respuesta: "privado" },
+      { id: 'D', pregunta: "Cómo se llama portarse bien en internet", respuesta: "respeto" },
+      { id: 'E', pregunta: "Qué pasa si dices cosas malas o amenazas en redes", respuesta: "problemas" },
+      { id: 'F', pregunta: "Qué debes hacer antes de compartir una noticia", respuesta: "revisar" },
+      { id: 'G', pregunta: "Cómo se llaman las noticias falsas en internet", respuesta: "noticias falsas" },
+      { id: 'H', pregunta: "Qué debes hacer para no pasar muchas horas en redes sociales", respuesta: "descansar" },
+      { id: 'I', pregunta: "Cómo se llama alguien que finge ser otra persona", respuesta: "falso" },
+      { id: 'J', pregunta: "Qué debes hacer si alguien que no conoces quiere hablar contigo", respuesta: "tener cuidado" }
+    ];
+
+    let estadoPreguntas = Array(TOTAL_PREGUNTAS).fill(0);
+    let cantidadAcertadas = 0;
+    let numPreguntaActual = -1;
+    let timeLeft = TIEMPO_DEL_JUEGO;
+    let countdown;
+
+    const timer = document.getElementById("tiempo");
+
+    document.getElementById('boton-instrucciones').onclick = () => {
+      document.getElementById('modalInstrucciones').style.display = 'block';
+    };
+
+    document.getElementById('cerrarModal').onclick = () => {
+      document.getElementById('modalInstrucciones').style.display = 'none';
+    };
+
+    document.getElementById('boton-jugar').onclick = () => {
+      cambiarPantalla("pantalla-juego");
+      iniciarJuego();
+    };
+
+    function cambiarPantalla(id) {
+      document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activo'));
+      document.getElementById(id).classList.add('activo');
+    }
+
+    function iniciarJuego() {
+      crearCirculoLetras();
+      largarTiempo();
+      cargarPregunta();
+    }
+
+    function crearCirculoLetras() {
+      const container = document.querySelector(".container");
+      container.innerHTML = "";
+      for (let i = 0; i < TOTAL_PREGUNTAS; i++) {
+        const circle = document.createElement("div");
+        circle.classList.add("circle");
+        circle.textContent = bd_juego[i].id;
+        circle.id = bd_juego[i].id;
+        container.appendChild(circle);
+
+        const angle = (i / TOTAL_PREGUNTAS) * Math.PI * 2 - (Math.PI / 2);
+        const x = 110 + 100 * Math.cos(angle);
+        const y = 110 + 100 * Math.sin(angle);
+        circle.style.left = `${x}px`;
+        circle.style.top = `${y}px`;
+      }
+    }
+
+    function largarTiempo() {
+      countdown = setInterval(() => {
+        timer.textContent = timeLeft;
+        timeLeft--;
+        if (timeLeft < 0) {
+          clearInterval(countdown);
+          mostrarPantallaFinal();
+        }
+      }, 1000);
+    }
+
+    function cargarPregunta() {
+      numPreguntaActual = (numPreguntaActual + 1) % TOTAL_PREGUNTAS;
+      while (estadoPreguntas[numPreguntaActual] === 1) {
+        numPreguntaActual = (numPreguntaActual + 1) % TOTAL_PREGUNTAS;
+      }
+
+      const actual = bd_juego[numPreguntaActual];
+      document.getElementById("letra-pregunta").textContent = actual.id;
+      document.getElementById("pregunta").textContent = actual.pregunta;
+      document.querySelectorAll(".circle").forEach(c => c.classList.remove("pregunta-actual"));
+      document.getElementById(actual.id).classList.add("pregunta-actual");
+    }
+
+    document.getElementById("respuesta").addEventListener("keyup", function(event) {
+      if (event.key === "Enter") {
+        if (this.value.trim() === "") return;
+        controlarRespuesta(this.value.toLowerCase());
+        this.value = "";
+      }
+    });
+
+    function controlarRespuesta(txt) {
+      const actual = bd_juego[numPreguntaActual];
+      const id = actual.id;
+      const correcto = txt === actual.respuesta.toLowerCase();
+
+      estadoPreguntas[numPreguntaActual] = 1;
+      document.getElementById(id).classList.remove("pregunta-actual");
+      document.getElementById(id).classList.add(correcto ? "bien-respondida" : "mal-respondida");
+      if (correcto) cantidadAcertadas++;
+
+      if (estadoPreguntas.includes(0)) {
+        cargarPregunta();
+      } else {
+        clearInterval(countdown);
+        mostrarPantallaFinal();
+      }
+    }
+
+    document.getElementById("pasar").onclick = () => {
+      document.getElementById(bd_juego[numPreguntaActual].id).classList.remove("pregunta-actual");
+      cargarPregunta();
+    };
+
+    function mostrarPantallaFinal() {
+      document.getElementById("acertadas").textContent = cantidadAcertadas;
+      document.getElementById("score").textContent = ((cantidadAcertadas / TOTAL_PREGUNTAS) * 100).toFixed(1) + "% de acierto";
+      cambiarPantalla("pantalla-final");
+    }
+
+    document.getElementById("recomenzar").onclick = () => {
+      estadoPreguntas = Array(TOTAL_PREGUNTAS).fill(0);
+      cantidadAcertadas = 0;
+      numPreguntaActual = -1;
+      timeLeft = TIEMPO_DEL_JUEGO;
+      document.getElementById("respuesta").value = "";
+      document.querySelectorAll(".circle").forEach(c => {
+        c.classList.remove("bien-respondida", "mal-respondida", "pregunta-actual");
+      });
+      cambiarPantalla("pantalla-juego");
+      iniciarJuego();
+    };
+
+    document.getElementById("boton-regresar").onclick = () => {
+      clearInterval(countdown);
+      document.getElementById("respuesta").value = "";
+      document.querySelectorAll(".circle").forEach(c => {
+        c.classList.remove("bien-respondida", "mal-respondida", "pregunta-actual");
+      });
+      estadoPreguntas = Array(TOTAL_PREGUNTAS).fill(0);
+      cantidadAcertadas = 0;
+      numPreguntaActual = -1;
+      timeLeft = TIEMPO_DEL_JUEGO;
+      cambiarPantalla("pantalla-inicial");
+    };
+  </script>
+</body>
+</html>
